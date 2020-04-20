@@ -213,7 +213,7 @@ def _expression_division(expr, parameters):
 # Copied from FFCX (ffc/language/ufl_to_cnodes.py)
 math_table = {
     'sqrt': ('sqrt', 'csqrt'),
-    'abs': ('fabs', 'cabs'),
+    'abs': ('fabs', 'abs'),
     'cos': ('cos', 'ccos'),
     'sin': ('sin', 'csin'),
     'tan': ('tan', 'ctan'),
