@@ -91,12 +91,14 @@ def compile_integral(integral_data, form_data, prefix, parameters, interface, co
         if coffee:
             import tsfc.kernel_interface.firedrake as firedrake_interface_coffee
             interface = firedrake_interface_coffee.KernelBuilder
-            scalar_type = parameters["scalar_type_c"]
         else:
             # Delayed import, loopy is a runtime dependency
             import tsfc.kernel_interface.firedrake_loopy as firedrake_interface_loopy
             interface = firedrake_interface_loopy.KernelBuilder
-            scalar_type = parameters["scalar_type"]
+    if coffee:
+        scalar_type = parameters["scalar_type_c"]
+    else:
+        scalar_type = parameters["scalar_type"]
 
     # Remove these here, they're handled below.
     if parameters.get("quadrature_degree") in ["auto", "default", None, -1, "-1"]:
