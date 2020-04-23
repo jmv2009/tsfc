@@ -17,6 +17,9 @@ PARAMETERS = {
     # Scalar type numpy dtype
     "scalar_type": numpy.float64,
 
+    # So that tests pass (needs to match scalar_type)
+    "scalar_type_c": "double",
+
     # Precision of float printing (number of digits)
     "precision": numpy.finfo(numpy.dtype("double")).precision,
 }
