@@ -10,7 +10,7 @@ import collections
 from functools import singledispatch
 from itertools import chain, groupby
 
-from gem.node import traversal, collect_refcount
+from gem.node import traversal, collect_refcount, Memoizer
 from gem import gem, impero as imp, optimise, scheduling
 
 
@@ -316,3 +316,84 @@ def temp_refcount(temporaries, op):
         raise AssertionError("unhandled operation: %s" % type(op))
 
     return counter
+
+
+def dtype_sort_key(dtype):
+    return 1 if dtype.kind == 'c' else -1
+
+
+@singledispatch
+def _assign_dtype(expression, self):
+    return self.scalar
+
+
+@_assign_dtype.register(gem.Zero)
+@_assign_dtype.register(gem.Identity)
+@_assign_dtype.register(gem.Delta)
+def _assign_dtype_real(expression, self):
+    return self.real
+
+
+@_assign_dtype.register(gem.Literal)
+def _assign_dtype_identity(expression, self):
+    return expression.array.dtype
+
+
+@_assign_dtype.register(gem.Sum)
+@_assign_dtype.register(gem.Product)
+@_assign_dtype.register(gem.Division)
+def _assign_dtype_binop(expression, self):
+    return max(map(self, expression.children), key=dtype_sort_key)
+
+
+@_assign_dtype.register(gem.Power)
+def _assign_dtype_power(expression, self):
+    # Conservative
+    return self.scalar
+
+
+@_assign_dtype.register(gem.MathFunction)
+def _assign_dtype_mathfunction(expression, self):
+    if expression.name in {"real", "imag"}:
+        return self.real
+    else:
+        return self.scalar
+
+
+@_assign_dtype.register(gem.MinValue)
+@_assign_dtype.register(gem.MaxValue)
+def _assign_dtype_minmax(expression, self):
+    # UFL did correctness checking
+    return self.real
+
+
+@_assign_dtype.register(gem.Conditional)
+def _assign_dtype_conditional(expression, self):
+    return max(map(self, expression.children[1:]), key=dtype_sort_key)
+
+
+@_assign_dtype.register(gem.ComponentTensor)
+@_assign_dtype.register(gem.Indexed)
+@_assign_dtype.register(gem.IndexSum)
+@_assign_dtype.register(gem.ListTensor)
+def _assign_dtype_uop(expression, self):
+    return max(map(self, expression.children), key=dtype_sort_key)
+
+
+def assign_dtypes(expressions, scalar_type):
+    """Assign numpy data types to expressions.
+
+    Used for declaring temporaries when converting from Impero to lower level code.
+
+    :arg expressions: List of GEM expressions.
+    :arg scalar_type: Default scalar type.
+
+    :returns: list of tuples (expression, dtype)."""
+    mapper = Memoizer(_assign_dtype)
+    if scalar_type.kind == "c":
+        real_type = scalar_type.type(0).real.dtype
+    else:
+        real_type = scalar_type
+    mapper.real = real_type
+    mapper.scalar = scalar_type
+    return [(e, mapper(e)) for e in expressions]

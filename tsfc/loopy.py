@@ -9,6 +9,7 @@ from functools import singledispatch
 from collections import defaultdict, OrderedDict
 
 from gem import gem, impero as imp
+from gem.impero_utils import assign_dtypes
 
 import islpy as isl
 import loopy as lp
@@ -48,6 +49,7 @@ math_table = {
     'min_value': ('min', None),
     'max_value': ('max', None)
 }
+
 
 class LoopyContext(object):
     def __init__(self):
@@ -110,13 +112,13 @@ def generate(impero_c, args, precision, scalar_type, kernel_name="loopy_kernel",
 
     # Create arguments
     data = list(args)
-    for i, temp in enumerate(impero_c.temporaries):
+    for i, (temp, dtype) in enumerate(assign_dtypes(impero_c.temporaries, scalar_type)):
         name = "t%d" % i
         if isinstance(temp, gem.Constant):
-            data.append(lp.TemporaryVariable(name, shape=temp.shape, dtype=temp.array.dtype, initializer=temp.array, address_space=lp.AddressSpace.LOCAL, read_only=True))
+            data.append(lp.TemporaryVariable(name, shape=temp.shape, dtype=dtype, initializer=temp.array, address_space=lp.AddressSpace.LOCAL, read_only=True))
         else:
             shape = tuple([i.extent for i in ctx.indices[temp]]) + temp.shape
-            data.append(lp.TemporaryVariable(name, shape=shape, dtype=numpy.float64, initializer=None, address_space=lp.AddressSpace.LOCAL, read_only=False))
+            data.append(lp.TemporaryVariable(name, shape=shape, dtype=dtype, initializer=None, address_space=lp.AddressSpace.LOCAL, read_only=False))
         ctx.gem_to_pymbolic[temp] = p.Variable(name)
 
     # Create instructions
