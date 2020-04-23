@@ -15,7 +15,7 @@ PARAMETERS = {
     "unroll_indexsum": 3,
 
     # Scalar type numpy dtype
-    "scalar_type": numpy.float64,
+    "scalar_type": numpy.dtype(numpy.float64),
 
     # So that tests pass (needs to match scalar_type)
     "scalar_type_c": "double",
