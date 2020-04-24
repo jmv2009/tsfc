@@ -207,10 +207,8 @@ class Literal(Constant):
 
     @property
     def value(self):
-        try:
-            return float(self.array)
-        except TypeError:
-            return complex(self.array)
+        assert self.shape == ()
+        return self.array.dtype.type(self.array)
 
     @property
     def shape(self):
