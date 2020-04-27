@@ -2,8 +2,6 @@
 
 This is the final stage of code generation in TSFC."""
 
-from math import isnan
-
 import numpy
 from functools import singledispatch
 from collections import defaultdict, OrderedDict
