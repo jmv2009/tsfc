@@ -308,7 +308,8 @@ def _expression_mathfunction(expr, ctx):
     # Other math functions
     name = math_table[expr.name][complex_mode]
     if name is None:
-        raise RuntimeError("{} not supported in complex mode".format(expr.name))
+        raise RuntimeError("{} not supported in {} mode".format(expr.name,
+                                                                ("real", "complex")[complex_mode]))
 
     return p.Variable(name)(*[expression(c, ctx) for c in expr.children])
 
